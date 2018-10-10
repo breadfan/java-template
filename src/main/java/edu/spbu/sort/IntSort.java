@@ -12,27 +12,33 @@ public class IntSort {
         int size1 = m - l + 1, size2 = r - m;
         int fir = 0, sec = 0;
         int[] Larr = new int [size1]; int[] Rarr = new int [size2];
-        for(int i = 0; i < size1; ++i){
+        System.arraycopy(arr, l, Larr, 0, size1);
+        System.arraycopy(arr, m + 1, Rarr, 0, size2);
+        /*for(int i = 0; i < size1; ++i){
             Larr[i] = arr[i + l];
         }
         for(int i = 0; i < size2; ++i){
             Rarr[i] = arr[i + m + 1];
-        }
+        }*/
         int k = 0;
         while(fir < arr.length && sec < arr.length) {
-            if (Larr[fir] > Rarr[sec++]) {
-                arr[k + l] = Rarr[sec++];
+            if (Larr[fir] > Rarr[sec]) {
+                System.arraycopy(Rarr, sec++, arr, k + l, 1 );
+                //arr[k + l] = Rarr[sec++];
             } else {
-                arr[k + l] = Larr[fir++];
+                System.arraycopy(Larr, fir++, arr, k + l, 1);
+                //arr[k + l] = Larr[fir++];
             }
             ++k;
         }
         while(fir < size1){
-            arr[l + k] = Larr[fir++];
+            System.arraycopy(Larr, fir++, arr, k + l, 1);
+            //arr[l + k] = Larr[fir++];
             ++k;
         }
         while(sec < size2){
-            arr[l + k] = Rarr[sec++];
+            System.arraycopy(Rarr, sec++, arr, k + l, 1 );
+            //arr[l + k] = Rarr[sec++];
             ++k;
         }
 
