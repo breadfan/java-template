@@ -8,8 +8,47 @@ import java.util.List;
  * Created by artemaliev on 07/09/15.
  */
 public class IntSort {
-  public static void sort (int array[]) {
-    Arrays.sort(array);
+    public static void Merge(int[] arr, int l, int m, int r){
+        int size1 = m - l + 1, size2 = r - m;
+        int fir = 0, sec = 0;
+        int[] Larr = new int [size1]; int[] Rarr = new int [size2];
+        for(int i = 0; i < size1; ++i){
+            Larr[i] = arr[i + l];
+        }
+        for(int i = 0; i < size2; ++i){
+            Rarr[i] = arr[i + m + 1];
+        }
+        int k = 0;
+        while(fir < arr.length && sec < arr.length) {
+            if (Larr[fir] > Rarr[sec++]) {
+                arr[k + l] = Rarr[sec++];
+            } else {
+                arr[k + l] = Larr[fir++];
+            }
+            ++k;
+        }
+        while(fir < size1){
+            arr[l + k] = Larr[fir++];
+            ++k;
+        }
+        while(sec < size2){
+            arr[l + k] = Rarr[sec++];
+            ++k;
+        }
+
+    }
+
+    public static void MergeSort(int[] arr, int l, int r){
+        if(l < r) {
+            int m = r - (r + l) / 2;
+            MergeSort(arr, l, m - 1);
+            MergeSort(arr, m, r);
+            Merge(arr, l, m, r);
+        }
+    }
+
+    public static void sort (int array[]) {
+    MergeSort(array, 0, array.length);
   }
 
   public static void sort (List<Integer> list) {
