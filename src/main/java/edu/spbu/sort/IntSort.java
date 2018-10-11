@@ -21,7 +21,7 @@ public class IntSort {
             Rarr[i] = arr[i + m + 1];
         }
         int k = l;
-        while(fir < arr.length && sec < arr.length) {
+        while(fir < Larr.length && sec < Rarr.length) {
             if (Larr[fir] > Rarr[sec]) {
                 //System.arraycopy(Rarr, sec++, arr, k + l, 1 );
                 arr[k] = Rarr[sec];
@@ -49,7 +49,7 @@ public class IntSort {
     }
 
     public static void MergeSort(int[] arr, int l, int r){
-        if(l < r) {
+        while(l < r) {
             int m = r - (r + l) / 2;
             MergeSort(arr, l, m - 1);
             MergeSort(arr, m, r);
