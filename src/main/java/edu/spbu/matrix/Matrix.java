@@ -1,23 +1,25 @@
 package edu.spbu.matrix;
 
+import java.io.IOException;
+
 /**
  *
  */
-public interface Matrix
-{
-  /**
-   * однопоточное умнджение матриц
-   * должно поддерживаться для всех 4-х вариантов
-   * @param o
-   * @return
-   */
-  Matrix mul(Matrix o);
+public interface Matrix {
+    Matrix mul(Matrix o) throws IOException;
 
-  /**
-   * многопоточное умножение матриц
-   * @param o
-   * @return
-   */
-  Matrix dmul(Matrix o);
 
+    Matrix dmul(Matrix o) throws IOException;
+
+    Matrix transposition() throws IOException;
+
+    boolean equals(Object o);
+
+    int getRows();
+
+    int getColumns();
+
+    double getElement(int i, int j);
+
+    void toSize(int cols, int rows);
 }
