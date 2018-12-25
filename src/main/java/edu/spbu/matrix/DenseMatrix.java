@@ -79,11 +79,6 @@ public class DenseMatrix implements Matrix {
         return rows;
     }
 
-    public void toSize(int rows, int cols) {
-        this.rows = rows;
-        this.cols = cols;
-        this.DMatrix = new double[rows][cols];
-    }
 
     public double getElement(int i, int j) {
         return DMatrix[i][j];

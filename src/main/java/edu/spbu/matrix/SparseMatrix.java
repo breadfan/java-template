@@ -1,9 +1,6 @@
 package edu.spbu.matrix;
 
-//import javafx.util.Pair;
 
-import javax.xml.ws.Action;
-import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,7 +11,9 @@ import java.util.*;
  * Разряженная матрица
  */
 public class SparseMatrix implements Matrix {
-    public SparseMatrix() {
+    public SparseMatrix(int cols, int rows) {
+        this.cols = cols;
+        this.rows = rows;
         sparse_Matr_hash = new HashMap<>();
     }
 
@@ -64,50 +63,48 @@ public class SparseMatrix implements Matrix {
     public int rows = 0, cols = 0;
 
     public class Multiplier_Threads_Sparse extends Thread {
-        SparseMatrix m2, m1;
-        HashMap<Pair<Integer, Integer>, Double> current_Hash_Map;
-        SparseMatrix result_Matrix;
-        //int quarter;
+        SparseMatrix m1, m2, temp_Result;
+        int first_Ptr, second_Ptr;
 
-        Multiplier_Threads_Sparse(SparseMatrix m1, SparseMatrix m2,
-                                  HashMap<Pair<Integer, Integer>, Double> current_Hash_Map,
-                                  HashMap<Pair<Integer, Integer>, Double> result) {
+        Multiplier_Threads_Sparse(int first_Ptr, int second_Ptr, SparseMatrix m1, SparseMatrix m2,
+                                  SparseMatrix temp_Result) {
             super();
-            this.current_Hash_Map = current_Hash_Map;
+            this.first_Ptr = first_Ptr;
+            this.second_Ptr = second_Ptr;
             this.m1 = m1;
             this.m2 = m2;
-            this.result_Matrix.sparse_Matr_hash = result;
-            //this.quarter = quarter;
+            this.temp_Result = temp_Result;
         }
 
         @Override
         public void run() {
-            for (Map.Entry<Pair<Integer, Integer>, Double> entry_First : current_Hash_Map.entrySet())
-                for (Map.Entry<Pair<Integer, Integer>, Double> entry_Second : m2.sparse_Matr_hash.entrySet()) {
-                    if (entry_First.getKey().getSecond().equals(entry_Second.getKey().getFirst())) {
-                        int first = entry_First.getKey().getFirst();
-                        int second = entry_Second.getKey().getSecond();
-                        System.out.println(entry_First.getValue() * entry_Second.getValue() + result_Matrix.getElement(first, second));
-                        if(!result_Matrix.sparse_Matr_hash.containsKey(new Pair<>(first, second))) {
-                            System.out.println("fuck");
-                            result_Matrix.cols++;
-                            result_Matrix.rows++;
+            for (Pair<Integer, Integer> pair: m1.sparse_Matr_hash.keySet() ) {
+                for(int i = first_Ptr; i < first_Ptr + second_Ptr; ++i){
+                    if(i < m2.cols){
+                        Pair<Integer, Integer> temp_Pair = new Pair<>(pair.second_of_Pair, i);
+                        if(m2.sparse_Matr_hash.containsKey(temp_Pair)){
+                            Pair<Integer, Integer> temp_Gear = new Pair<>(pair.first_of_Pair, temp_Pair.second_of_Pair);
+                            double t;
+                            if(temp_Result.sparse_Matr_hash.containsKey(temp_Gear)){
+                                t = temp_Result.sparse_Matr_hash.get(temp_Gear) +
+                                        m1.sparse_Matr_hash.get(pair) * m2.sparse_Matr_hash.get(temp_Pair);
+                            }
+                            else{
+                                t = m1.sparse_Matr_hash.get(pair) * m2.sparse_Matr_hash.get(temp_Pair);
+                            }
+                            temp_Result.sparse_Matr_hash.put(temp_Gear, t);
                         }
-                        result_Matrix.sparse_Matr_hash.put(new Pair<>(first, second),
-                                entry_First.getValue() * entry_Second.getValue() + result_Matrix.getElement(first, second));
-
                     }
                 }
 
+            }
         }
     }
 
 
     @Override
     public SparseMatrix transposition() {
-        SparseMatrix result_M = new SparseMatrix();
-        result_M.cols = rows;
-        result_M.rows = cols;
+        SparseMatrix result_M = new SparseMatrix(cols, rows);
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (getElement(i, j) != 0) {
@@ -125,11 +122,6 @@ public class SparseMatrix implements Matrix {
 
     public int getRows() {
         return rows;
-    }
-
-    public void toSize(int rows, int cols) {
-        this.rows = rows;
-        this.cols = cols;
     }
 
     public double getElement(int i, int j) {
@@ -180,10 +172,7 @@ public class SparseMatrix implements Matrix {
                 System.out.println("first.cols != second.rows! EXTERMINATUS!!!!");
                 System.exit(-1);
             }
-            SparseMatrix result_Matrix = new SparseMatrix();
-            int cols_of_Second = o.getColumns();
-            //int rows_of_Second = o.getRows();
-            result_Matrix.toSize(rows, cols_of_Second);
+            SparseMatrix result_Matrix = new SparseMatrix(rows, o.getColumns());
             for (Map.Entry<Pair<Integer, Integer>, Double> entry_First : this.sparse_Matr_hash.entrySet()) {
                 for (Map.Entry<Pair<Integer, Integer>, Double> entry_Second : ((SparseMatrix) o).sparse_Matr_hash.entrySet()) {
                     if (entry_First.getKey().getSecond().equals(entry_Second.getKey().getFirst())) {
@@ -197,35 +186,7 @@ public class SparseMatrix implements Matrix {
             }
 
             result_Matrix.sparse_Matr_hash.entrySet().removeIf(entry -> Math.abs(entry.getValue()) < 1.0E-06);
-//            for(int i = 0; i < rows; ++i) {
-//                for (int j = 0; j < cols; ++j) {
-//                    int iterator_Searching_Next_Non_Empty = j;
-//                    while(!result_Matrix.sparse_Matr_hash.containsKey(new Pair<>(i, iterator_Searching_Next_Non_Empty))
-//                            && iterator_Searching_Next_Non_Empty < cols)
-//                        ++iterator_Searching_Next_Non_Empty;
-//                    if(iterator_Searching_Next_Non_Empty == cols)
-//                        break;
-//                    else if (iterator_Searching_Next_Non_Empty != j){ //iterator == j, if element != 0 and was added to the matrix from the start
-//                        result_Matrix.sparse_Matr_hash.put(new Pair<>(i, j), result_Matrix.getElement(i, iterator_Searching_Next_Non_Empty));
-//                        result_Matrix.sparse_Matr_hash.remove(new Pair<>(i, iterator_Searching_Next_Non_Empty));
-//                    }
-//                }
-//            }
-//            for(int i = 0; i < rows; ++i) { //filling empty cells
-//                for (int j = 0; j < cols; ++j) {
-//                    int iterator_Searching_Next_Non_Null = j;
-//                    while( (!result_Matrix.sparse_Matr_hash.containsKey(new Pair<>(i, iterator_Searching_Next_Non_Null))
-//                            || result_Matrix.getElement(i, iterator_Searching_Next_Non_Null) == 0)
-//                            && iterator_Searching_Next_Non_Null < cols)
-//                        ++iterator_Searching_Next_Non_Null;
-//                    if(iterator_Searching_Next_Non_Null == cols)
-//                        break;
-//                    else if (iterator_Searching_Next_Non_Null != j){ //iterator == j, if element != 0 and was added to the matrix from the start
-//                        result_Matrix.sparse_Matr_hash.put(new Pair<>(i, j), result_Matrix.getElement(i, iterator_Searching_Next_Non_Null));
-//                        result_Matrix.sparse_Matr_hash.remove(new Pair<>(i, iterator_Searching_Next_Non_Null));
-//                    }
-//                }
-//            }
+
             return result_Matrix;
 
 
@@ -252,51 +213,47 @@ public class SparseMatrix implements Matrix {
      * @return
      */
     public Matrix dmul(Matrix o) throws IOException {
-        Thread[] threads_Arr = new Multiplier_Threads_Sparse[4];
-        //HashMap<Pair<Integer, Integer>, Double> curr_Hash_Map = new HashMap<>();
-        SparseMatrix result_Matrix = new SparseMatrix();
-        HashMap<Pair<Integer, Integer>, Double> temp_Hash = this.sparse_Matr_hash;
-        int size_Matrix = this.sparse_Matr_hash.size();
-        int i, count;
-        for (i = 0; i < 4; ++i) {       // main cycle for multiplication
-            count = 0;      //restricted condition for an exit from cycle
-            HashMap<Pair<Integer, Integer>, Double> adding_Hash = new HashMap<>();      // quarter of the main hash_map
+        SparseMatrix result_Matrix = new SparseMatrix(this.rows, o.getColumns());   //we use this matrix only
+            // in the end
+        ArrayList<Thread> threads_Arr = new ArrayList<>();
+        ArrayList<SparseMatrix> list_Matrices = new ArrayList<>();
+        int separator = o.getColumns() / 4 +1;
 
-            for (Map.Entry<Pair<Integer, Integer>, Double> entry : temp_Hash.entrySet()) {    // dividing main hash_map to 4 parts
-                if (count == size_Matrix / 4 - 1)
-                    break;
-                adding_Hash.put(entry.getKey(), entry.getValue());
-                temp_Hash.remove(entry.getKey());
-                ++count;
-            }
-
-            //handling case with the remainder
-            if (i == 3 && !temp_Hash.isEmpty()) {      //it is the case if we have remainder of division by 4. The last "adding hash"
-                // could have contain of 1 to 3 extra elements (by comparing to other hashes)
-                for (Map.Entry<Pair<Integer, Integer>, Double> entry : temp_Hash.entrySet()) {
-                    adding_Hash.put(entry.getKey(), entry.getValue());
-                }
-            }
-
-            try {
-                threads_Arr[i] = new Multiplier_Threads_Sparse(this, (SparseMatrix) o, adding_Hash,
-                        result_Matrix.sparse_Matr_hash);
-                threads_Arr[i].start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        for (int i = 0; i < o.getColumns(); i += separator) {
+            SparseMatrix temp_result = new SparseMatrix(o.getColumns(), rows);
+            list_Matrices.add(temp_result);
+            Multiplier_Threads_Sparse abc = new Multiplier_Threads_Sparse(i, separator, this, (SparseMatrix) o, temp_result);
+            Thread newthread = new Thread(abc);
+            threads_Arr.add(newthread);
+            newthread.start();
         }
-
-        for (i = 0; i < 4; ++i) {
-            try {
-                threads_Arr[i].join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-        }
-        for(Double obj: result_Matrix.sparse_Matr_hash.values())
-            System.out.println(obj);
+       for(Thread p : threads_Arr){
+           try{
+               p.join();
+           }
+           catch (InterruptedException e){
+               e.printStackTrace();
+           }
+       }
+       for(SparseMatrix sp_m : list_Matrices){
+           for(Pair<Integer, Integer> pair : sp_m.sparse_Matr_hash.keySet()){
+               if(result_Matrix.sparse_Matr_hash.containsKey(pair)){
+                   double t = result_Matrix.sparse_Matr_hash.get(pair) + sp_m.sparse_Matr_hash.get(pair) ;
+                   if (Math.abs(t) < 1.0E-06)
+                   {
+                      result_Matrix.sparse_Matr_hash.remove(pair);
+                   } else {
+                       result_Matrix.sparse_Matr_hash.put(pair, t);
+                   }
+               }
+               else{
+                   if(Math.abs(sp_m.sparse_Matr_hash.get(pair))>= 1.0E-06) {
+                       result_Matrix.sparse_Matr_hash.put(pair, sp_m.sparse_Matr_hash.get(pair));
+                       System.out.println(sp_m.sparse_Matr_hash.get(pair));
+                   }
+               }
+           }
+       }
         result_Matrix.sparse_Matr_hash.entrySet().removeIf(entry -> Math.abs(entry.getValue()) < 1.0E-06);
         return result_Matrix;
     }
@@ -307,6 +264,7 @@ public class SparseMatrix implements Matrix {
      * @param o
      * @return
      */
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof SparseMatrix) {
@@ -314,8 +272,17 @@ public class SparseMatrix implements Matrix {
             if (this.cols == m1mulm2.getColumns() && this.rows == m1mulm2.getRows()) {
                 for (Pair<Integer, Integer> expected : this.sparse_Matr_hash.keySet())
                     if (!m1mulm2.sparse_Matr_hash.containsKey(expected)      //hoping there will be no visiting to non-existing objects
-                            || (m1mulm2.sparse_Matr_hash.get(expected) - this.sparse_Matr_hash.get(expected) >= 1.0E-6)) {
+                            || !(m1mulm2.sparse_Matr_hash.get(expected)).equals(this.sparse_Matr_hash.get(expected))) {
                         System.out.println("Objects are not equal");
+                        System.out.println(m1mulm2.sparse_Matr_hash.get(expected) + " " + this.sparse_Matr_hash.get(expected)
+                                + expected.getFirst() + expected.getSecond());
+                        for(int i = 0; i < m1mulm2.rows; ++i)
+                            for(int j = 0; j < m1mulm2.cols; ++j)
+                                System.out.print(" m1mulm2: " + m1mulm2.getElement(i, j) + " ");
+                        System.out.println();
+                        for(int i = 0; i < this.rows; ++i)
+                            for(int j = 0; j < this.cols; ++j)
+                                System.out.print(" expected: " + this.getElement(i, j) + " ");
                         return false;
                     }
                 return true;

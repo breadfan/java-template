@@ -21,5 +21,4 @@ public interface Matrix {
 
     double getElement(int i, int j);
 
-    void toSize(int cols, int rows);
 }
